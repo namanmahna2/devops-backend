@@ -54,13 +54,17 @@ jobs:
         - name: Build docker image(local)
           run: docker buildx build --load -t devops-backend:latest .
           
+        - name: Install Trivy
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y wget apt-transport-https gnupg lsb-release
+            wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+            echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
+            sudo apt-get update
+            sudo apt-get install -y trivy
+
         - name: Scan docker image
-          uses: aquasecurity/trivy-action@v0.28.0
-          with:
-            image-ref: devops-backend:latest
-            severity: HIGH,CRITICAL
-            ignore-unfixed: true
-            scanner: vuln
+          run: trivy image  --severity HIGH,CRITICAL --ignore-unfixed devops-backend:latest
 
         - name: Build and push image
           run: docker buildx build --platform linux/amd64 -t namankali/devops-backend:latest --push
