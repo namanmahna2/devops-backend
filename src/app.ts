@@ -5,6 +5,8 @@ import compression from "compression"
 import cookie_parser from "cookie-parser"
 import helmet from "helmet"
 
+import "./models/redis/queue"
+
 const app = express()
 
 // Routes
@@ -12,6 +14,7 @@ import index from "./routes/index"
 import metrics from "./routes/metrics"
 import users from "./routes/users"
 import actions from "./routes/actions"
+import webhook from "./routes/webhook"
 import { errorHandler } from "./middlewares/errorHandler"
 
 
@@ -19,6 +22,9 @@ app.use(cors({
     origin: "http://localhost:5173",
     credentials: true
 }))
+
+app.use("/api/webhook", webhook)
+
 app.use(express.json())
 app.use(compression())
 app.use(express.urlencoded({ extended: true }))
