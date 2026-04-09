@@ -48,7 +48,7 @@ webhookQueue.process("create-webhook", async (job: Job<JobData>, done) => {
                     content_type: "json",
                     secret: process.env.GITHUB_WEBHOOK_SECRET
                 },
-                events: ["push", "pull_request"]
+                events: ["push", "pull_request", "workflow_run", "issues", "issue_comment", "member", "repository"]
             }
         )
         // console.log("webhook_url api call bull .process ->> ", res)
