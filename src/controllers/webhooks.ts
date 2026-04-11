@@ -11,7 +11,6 @@ export class WebhookController {
 
     async webhook(data: any): Promise<ApiResponse<void>> {
         try {
-            console.log("data.body", data.body)
             const signature = data.headers["x-hub-signature-256"] as string
             const deliveryId = data.headers["x-github-delivery"];
 
@@ -69,7 +68,6 @@ export class WebhookController {
                     backoff: 5000,
                 }
             )
-            console.log("hi")
             return new ResponseBuilder<void>()
                 .setSignature("AI-DEVOPS")
                 .success(undefined, "Webhook accepted", 200)
