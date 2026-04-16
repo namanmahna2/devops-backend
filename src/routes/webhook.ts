@@ -16,4 +16,16 @@ router.post(
     }
 )
 
+router.post(
+    "/org",
+    express.raw({ type: "application/json" }),
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        res.sendStatus(200)
+        controller.org_webhook({
+            body: req.body,
+            headers: req.headers,
+        }).catch(console.error);
+    }
+)
+
 export default router

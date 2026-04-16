@@ -1,10 +1,18 @@
 const db = require("./db")
 const table = "repo_webhooks"
+const table_org = "org_webhooks"
 
 interface InsertWebhook {
     repoId: number,
     hook_id: number,
     webhook_url: string
+}
+
+interface InsertOrgWebhook {
+    github_account_id: number,
+    org_login: string,
+    github_hook_id: number,
+    webhook_url: string,
 }
 
 const insert_webhook = async (data: InsertWebhook) => {
@@ -33,8 +41,24 @@ const get_webhook_by_repo_id = async (repo_id: number) => {
     }
 }
 
+const insert_org_webhook = async (data: InsertOrgWebhook) => {
+    try {
+        const query = db(table_org)
+            .insert(data)
+            .onConflict([
+                "org_login",
+                "github_hook_id"
+            ]).ignore()
+
+        return await query
+    } catch (error) {
+        throw error
+    }
+}
+
 
 export {
     insert_webhook,
-    get_webhook_by_repo_id
+    get_webhook_by_repo_id,
+    insert_org_webhook
 }

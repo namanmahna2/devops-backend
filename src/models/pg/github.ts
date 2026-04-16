@@ -27,7 +27,7 @@ const insert_account = async (data: AccountData): Promise<[{ [key: string]: numb
     }
 }
 
-const update_github_access_token = async (where_data: Record<string, number>, update_data: Record<string, string>) => {
+const update_github_access_token = async (where_data: Record<string, any>, update_data: Record<string, string>) => {
     try {
         const query = db(table).where(where_data).update(update_data)
         return await query
@@ -64,9 +64,25 @@ const get_github_account_details = async (where_data: Record<string, number>) =>
     }
 }
 
+//  by github_user_id
+const get_user_account_details = async (
+    github_user_id: number
+): Promise<Record<string, number>[]> => {
+    try {
+        const query = db.select([
+            `${table}.id`
+        ]).from(table).where("github_user_id", github_user_id)
+
+        return await query
+    } catch (error) {
+        throw error
+    }
+}
+
 export {
     insert_account,
     update_github_access_token,
     get_github_access_token,
-    get_github_account_details
+    get_github_account_details,
+    get_user_account_details
 }

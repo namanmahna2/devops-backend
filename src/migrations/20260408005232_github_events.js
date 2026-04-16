@@ -7,6 +7,8 @@ export async function up(knex) {
       .inTable("repositories")
       .onDelete("CASCADE")
 
+    table.string("source_type").notNullable()
+
     table.string("event_type").notNullable()
 
     table.jsonb("payload").notNullable()

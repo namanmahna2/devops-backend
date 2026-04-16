@@ -1,9 +1,10 @@
 import Bull, { Job } from "bull"
 import { redis } from "./redis"
-import { JobData } from "../../utils/interfaces"
+import { InsertRepo, JobData } from "../../utils/interfaces"
 import { insert_org_webhook, insert_webhook } from "../pg/webhooks"
-import { get_repo } from "../pg/repositories"
+import { get_repo, insert_repo, update_repo_github_accounts_id } from "../pg/repositories"
 import { insert_github_event } from "../pg/github_events"
+import { get_user_account_details, update_github_access_token } from "../pg/github"
 
 const webhookQueue = new Bull("webhook-queue", {
     redis: {
@@ -86,15 +87,48 @@ webhookQueue.process("create-webhook", async (job: Job<JobData>, done) => {
 
 webhookQueue.process("process-webhook", async (job: Job<any>, done) => {
     try {
-        console.log("Processing webhook event");
+        console.log("Processing webhook event =====>>>>>> ", job.data);
 
-        const { deliveryId, event, payload, githubRepoId } = job.data;
+        const { deliveryId, event, payload, githubRepoId, sourceType } = job.data;
 
         const repo = await get_repo(+githubRepoId);
-
         if (!repo) {
-            console.log("Repo not found, skipping:", githubRepoId);
+            const github_account_details: Record<string, number>[] = await get_user_account_details(payload.sender.id)
+
+            // insert in repositories
+            const repo_insert = await insert_repo({
+                github_repo_id: githubRepoId,
+                github_account_id: github_account_details[0].id,
+                name: payload.repository.name,
+                full_name: payload.repository.full_name,
+                owner_login: payload.repository.owner.login,
+                default_branch: payload.repository.default_branch,
+                private: payload.repository.private,
+                archived: payload.repository.archived,
+                language: payload.repository.language,
+                github_created_at: payload.repository.created_at,
+                github_updated_at: payload.repository.updated_at,
+                pushed_at: payload.repository.pushed_at,
+                is_active: payload.action === "deleted" ? false : true
+            } as InsertRepo)
+
+            const add_org_event = await insert_github_event({
+                repo_id: repo_insert[0].id,
+                event,
+                payload,
+                delivery_id: deliveryId,
+                source_type: sourceType
+            })
+            console.log(" NEw Repo and gihub_event inserted in DB where no repository details were found")
             return true;
+        }
+
+        if (payload.action === "deleted") {
+            const update_repo = await update_repo_github_accounts_id({
+                github_repo_id: githubRepoId,
+                id: repo.github_account_id
+            }, false)
+
         }
 
         await insert_github_event({
@@ -102,6 +136,7 @@ webhookQueue.process("process-webhook", async (job: Job<any>, done) => {
             repo_id: repo.id,
             event,
             payload,
+            source_type: sourceType
         });
 
         console.log("Webhook event stored:", deliveryId);
@@ -133,12 +168,13 @@ webhookQueue.process("create-webhook-org", async (job: Job<JobDataOrgWebhookCrea
             "POST /orgs/{owner}/hooks",
             {
                 owner,
+                name: "web",
                 config: {
                     url: "https://cuprous-caitlyn-pulsatile.ngrok-free.dev/api/webhook/org",
                     content_type: "json",
                     secret: process.env.GITHUB_WEBHOOK_SECRET
                 },
-                events: ["repository", "member", "organisation"]
+                events: ["repository", "member"]
             }
         )
 
@@ -148,6 +184,8 @@ webhookQueue.process("create-webhook-org", async (job: Job<JobDataOrgWebhookCrea
             webhook_url: "https://cuprous-caitlyn-pulsatile.ngrok-free.dev/api/webhook/org",
             github_hook_id: res.data.id
         })
+
+        done(null, "true")
 
     } catch (error: any) {
         console.error("Error processing webhook event:", error);

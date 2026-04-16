@@ -1,20 +1,9 @@
+import { InsertRepo } from "../../utils/interfaces"
+
 const db = require("./db")
 const table = "repositories"
 
-interface InsertRepo {
-    github_account_id: number,
-    github_repo_id: number,
-    name: string,
-    full_name: string,
-    owner_login: string,
-    default_branch: string,
-    private: boolean,
-    archived: boolean,
-    language: string | null,
-    github_created_at: string,
-    github_updated_at: string,
-    pushed_at: string,
-}
+
 
 const get_repo = async (github_repo_id: number) => {
     try {
@@ -47,8 +36,33 @@ const insert_repo = async (data: InsertRepo) => {
         throw error
     }
 }
+interface UpdateWhereDataRepositories {
+    id: number,
+    github_repo_id: number
+}
+
+const update_repo_github_accounts_id = async (where_data: UpdateWhereDataRepositories, is_active: boolean = true) => {
+    try {
+        const query = db.raw(`
+            update repositories
+                set 
+                is_active = ${is_active}
+            where github_account_id = (
+                select id from github_accounts where id = ${where_data.id}
+                )
+            and github_repo_id = ${where_data.github_repo_id}
+            `)
+
+        const result = await query
+        return result.rows
+    } catch (error) {
+        throw error
+    }
+}
+
 
 export {
     get_repo,
-    insert_repo
+    insert_repo,
+    update_repo_github_accounts_id
 }

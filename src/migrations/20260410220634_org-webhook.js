@@ -2,7 +2,7 @@
  * @param { import("knex").Knex } knex
  * @returns { Promise<void> }
  */
-const table_ = "org-webhook"
+const table_ = "org_webhooks"
 exports.up = async function (knex) {
     await knex.schema.createTable(table_, (table) => {
         table.increments("id").primary();

@@ -93,6 +93,21 @@ interface JobData {
     accessToken: string
 }
 
+interface InsertRepo {
+    github_account_id: number,
+    github_repo_id: number,
+    name: string,
+    full_name: string,
+    owner_login: string,
+    default_branch: string,
+    private: boolean,
+    archived: boolean,
+    language: string | null,
+    github_created_at: string,
+    github_updated_at: string,
+    pushed_at: string,
+}
+
 export {
     CustomRequest,
     AccessTokenData,
@@ -105,5 +120,6 @@ export {
     GithubUser,
     GithubOrg,
     GithubRepo,
-    JobData
+    JobData,
+    InsertRepo
 }
